@@ -7,6 +7,7 @@ import argparse
 import time
 import torch
 import torch.nn.parallel
+import openvino.torch
 from contextlib import suppress
 
 from effdet import create_model, create_evaluator, create_dataset, create_loader
@@ -58,7 +59,7 @@ parser.add_argument('--num-classes', type=int, default=None, metavar='N',
                     help='Override num_classes in model config if set. For fine-tuning from pretrained.')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
-parser.add_argument('-b', '--batch-size', default=128, type=int,
+parser.add_argument('-b', '--batch-size', default=1, type=int,
                     metavar='N', help='mini-batch size (default: 128)')
 parser.add_argument('--img-size', default=None, type=int,
                     metavar='N', help='Input image dimension, uses model default if empty')
@@ -131,7 +132,8 @@ def validate(args):
     param_count = sum([m.numel() for m in bench.parameters()])
     print('Model %s created, param count: %d' % (args.model, param_count))
 
-    bench = bench.cuda()
+    #bench = bench.cuda()
+    bench = bench.eval()
 
     if args.torchscript:
         assert not args.apex_amp, \
