@@ -175,6 +175,7 @@ def validate(args):
     batch_time = AverageMeter()
     end = time.time()
     last_idx = len(loader) - 1
+    total_time = 0
     with torch.no_grad():
         for i, (input, target) in enumerate(loader):
             with amp_autocast():
@@ -185,11 +186,19 @@ def validate(args):
             batch_time.update(time.time() - end)
             end = time.time()
             if i % args.log_freq == 0 or i == last_idx:
-                print(
-                    f'Test: [{i:>4d}/{len(loader)}]  '
-                    f'Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s, {input.size(0) / batch_time.avg:>7.2f}/s)  '
-                )
+                if i == 0:
+                    print(
+                        f'Test: [{i:>4d}/{len(loader)}]  '
+                        f'Warmup Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s, {input.size(0) / batch_time.avg:>7.2f}/s)  '
+                    )
+                else:
+                    print(
+                        f'Test: [{i:>4d}/{len(loader)}]  '
+                        f'Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s, {input.size(0) / batch_time.avg:>7.2f}/s)  '
+                    )
+                    total_time = total_time + batch_time.val
 
+    print("Total elapsed time: ", total_time)
     mean_ap = 0.
     if dataset.parser.has_labels:
         mean_ap = evaluator.evaluate(output_result_file=args.results)
